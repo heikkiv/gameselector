@@ -1,0 +1,16 @@
+{
+  "name": "gameselector",
+  "description": "Game selector for nija project",
+  "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/Applifier/gameselector.git"
+  },
+  "bin" : { "gameselector" : "./app.js" },
+  "dependencies": {
+    "express" : "2.2.2",
+    "nodeunit": "0.5.1",
+    "mongodb": "0.9.6-7"
+  },
+  "author": "Heikki Verta <heikki@applifier.com>"
+}

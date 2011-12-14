@@ -1,0 +1,79 @@
+<!doctype html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <link rel="stylesheet" href="http://twitter.github.com/bootstrap/1.4.0/bootstrap.min.css">
+
+    <title>Applifier game selector client</title>
+
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.4/jquery.min.js"></script>
+    <script>
+
+      $(document).ready(function() {
+        $.ajax({
+          type: "GET",
+          url: "http://itunes.apple.com/us/rss/toppaidapplications/limit=20/xml",
+          dataType: "xml",
+          success: parseXml
+        });
+      });
+
+      function parseXml(xml) {
+        $(xml).find('entry').each(function() {
+
+          var id = parseAppId($(this).find('id').text());
+
+          $.getJSON('http://itunes.apple.com/lookup?callback=?&id=' + id, function(response) {
+            var name = response.results[0].trackName;
+            var button = $('<button class=\"btn primary\">Select</button>');
+            button.click(function(e) {
+              $.post(
+                '/select/' + id,
+                function(response) {
+                  button.hide();
+                  alert(name + ' selected');
+                }
+              );
+            });
+
+            var nameElement = $('<div class=\"span4\"><p>' + name + '</p>');
+            nameElement.append(button);
+            $('#games').append(nameElement);
+
+            var images = '<div class=\"span12\">';
+            response.results[0].screenshotUrls.forEach(function(url){
+              images = images + '<img src=\"' + url + '\" height=\"150\"></img>';
+            });
+            images = images + '</div>';
+
+            $('#games').append(images);
+          });
+
+        });
+      }
+
+      function parseAppId(idString) {
+        var temp = idString.split('/');
+        temp = temp[temp.length - 1];
+        temp = temp.split('?');
+        return temp[0].substring(2);
+      }
+
+    </script>
+  </head>
+
+
+  <body>
+
+    <div class="container">
+      <h1>Applifier game selector client</h1>
+      <h2>Games</h2>
+      <div id="games" class="row">
+
+      </div>
+    </div>
+
+  </body>
+</html>
+
+
