@@ -16,7 +16,7 @@ app.configure(function(){
 
 app.all('/select/:id', function(req, res) {
   console.log(req.params.id + ' selected');
-  log.write(req.params.id + '\n');
+  log.write(req.params.id + ',' + req.body.rating + ',' + req.body.link + '\n');
   res.send({ result: 'ok' })
 });
 

@@ -10,16 +10,40 @@
     <script>
 
       $(document).ready(function() {
-        $.ajax({
-          type: "GET",
-          url: "http://itunes.apple.com/us/rss/toppaidapplications/limit=20/xml",
-          dataType: "xml",
-          success: parseXml
+        updateGames('top_paid');
+        $('#top_paid').click(function(e) {
+          updateGames('top_paid');
+        });
+        $('#top_grossing').click(function(e) {
+          updateGames('top_grossing');
         });
       });
 
+      function updateGames(type) {
+        var url = '';
+        if(type == 'top_paid') {
+          url = "http://itunes.apple.com/us/rss/toppaidapplications/limit=25/xml";
+          $('#top_paid').addClass('disabled');
+          $('#top_grossing').removeClass('disabled');
+          $('.container h2').text('Top paid games');
+        } else {
+          url = "http://itunes.apple.com/us/rss/topgrossingapplications/limit=25/xml";
+          $('#top_paid').removeClass('disabled');
+          $('#top_grossing').addClass('disabled');
+          $('.container h2').text('Top grossing games');
+        }
+        $.ajax({
+          type: "GET",
+          url: url,
+          dataType: "xml",
+          success: parseXml
+        });
+      }
+
       function parseXml(xml) {
         $(xml).find('entry').each(function() {
+
+          $('#games').html('');
 
           var id = parseAppId($(this).find('id').text());
 
@@ -29,9 +53,13 @@
             button.click(function(e) {
               $.post(
                 '/select/' + id,
+                {
+                  rating: response.results[0].averageUserRatingForCurrentVersion,
+                  link: response.results[0].trackViewUrl
+                },
                 function(response) {
                   button.hide();
-                  alert(name + ' selected');
+                  //alert(name + ' selected');
                 }
               );
             });
@@ -58,7 +86,7 @@
         temp = temp.split('?');
         return temp[0].substring(2);
       }
-
+      
     </script>
   </head>
 
@@ -67,7 +95,19 @@
 
     <div class="container">
       <h1>Applifier game selector client</h1>
-      <h2>Games</h2>
+      <div class="row">
+        <div class="offset4 span4">
+          <button id="top_paid" class="btn large primary">Top paid</button>
+        </div>
+        <div class="span4">
+          <button id="top_grossing" class="btn large primary">Top grossing</button>
+        </div>
+      </div>
+      <hr/>
+      <div class="row">
+        <h2 class="span16">Top paid games</h2>
+        <div class="span16">&nbsp;</div>
+      </div>
       <div id="games" class="row">
 
       </div>
