@@ -17,19 +17,28 @@
         $('#top_grossing').click(function(e) {
           updateGames('top_grossing');
         });
+        $('#selected').click(function(e) {
+          selectedGames();
+        });
       });
+
+      function selectedGames() {
+        $.get('/selected', function(response) {
+          $('#games').html('');
+          response.games.forEach(function(game) {
+            var nameElement = $('<div class=\"span16\"><p>' + game.name + '</p><img src=\"' + game.pic + '\" height=\"50\"></img></div>');
+            $('#games').append(nameElement);
+          });
+        });
+      }
 
       function updateGames(type) {
         var url = '';
         if(type == 'top_paid') {
           url = "http://itunes.apple.com/us/rss/toppaidapplications/limit=25/xml";
-          $('#top_paid').addClass('disabled');
-          $('#top_grossing').removeClass('disabled');
           $('.container h2').text('Top paid games');
         } else {
           url = "http://itunes.apple.com/us/rss/topgrossingapplications/limit=25/xml";
-          $('#top_paid').removeClass('disabled');
-          $('#top_grossing').addClass('disabled');
           $('.container h2').text('Top grossing games');
         }
         $.ajax({
@@ -47,34 +56,42 @@
 
           var id = parseAppId($(this).find('id').text());
 
-          $.getJSON('http://itunes.apple.com/lookup?callback=?&id=' + id, function(response) {
-            var name = response.results[0].trackName;
-            var button = $('<button class=\"btn primary\">Select</button>');
-            button.click(function(e) {
-              $.post(
-                '/select/' + id,
-                {
-                  rating: response.results[0].averageUserRatingForCurrentVersion,
-                  link: response.results[0].trackViewUrl
-                },
-                function(response) {
-                  button.hide();
-                  //alert(name + ' selected');
-                }
-              );
-            });
+          $.getJSON('/select/' + id, function(response) {
+            if(!response.game) {
+              $.getJSON('http://itunes.apple.com/lookup?callback=?&id=' + id, function(response) {
 
-            var nameElement = $('<div class=\"span4\"><p>' + name + '</p>');
-            nameElement.append(button);
-            $('#games').append(nameElement);
+                var rating = response.results[0].averageUserRatingForCurrentVersion;
+                var link = response.results[0].trackViewUrl;
+                var name = response.results[0].trackName;
 
-            var images = '<div class=\"span12\">';
-            response.results[0].screenshotUrls.forEach(function(url){
-              images = images + '<img src=\"' + url + '\" height=\"150\"></img>';
-            });
-            images = images + '</div>';
+                var nameElement = $('<div class=\"span4\"><p>' + name + '</p></div>');
+                $('#games').append(nameElement);
 
-            $('#games').append(images);
+                var images = $('<div class=\"span12\"></div>');
+                response.results[0].screenshotUrls.forEach(function(url){
+                  var image = $('<img src=\"' + url + '\" height=\"150\"></img>');
+                  image.data('url', url);
+                  image.click(function(event) {
+                    var imageUrl = $(event.currentTarget).data('url');
+                    $.post(
+                      '/select/' + id,
+                      {
+                        name: name,
+                        rating: rating,
+                        link: link,
+                        pic: imageUrl
+                      },
+                      function(response) {
+                        nameElement.html($('<p>' + name + '</p><img src=\"' + imageUrl + '\" height=\"50\"></img>'));
+                      }
+                    );
+                  });
+                  images.append(image);
+                });
+
+                $('#games').append(images);
+              });
+            }
           });
 
         });
@@ -96,11 +113,14 @@
     <div class="container">
       <h1>Applifier game selector client</h1>
       <div class="row">
-        <div class="offset4 span4">
+        <div class="offset2 span4">
           <button id="top_paid" class="btn large primary">Top paid</button>
         </div>
         <div class="span4">
           <button id="top_grossing" class="btn large primary">Top grossing</button>
+        </div>
+        <div class="span4">
+          <button id="selected" class="btn large primary">Selected</button>
         </div>
       </div>
       <hr/>
