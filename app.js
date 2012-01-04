@@ -34,7 +34,15 @@ app.get('/select/:id', function(req, res) {
       console.error(err);
       res.send({ result: 'fail' });
     } else {
-      res.send({ result: 'ok', game: game});
+      if(game) {
+		console.log('Found game: ' + req.params.id);
+        res.send({ result: 'ok', game: game});
+      } else {
+        gameRepository.findIgnored(req.params.id, function(err, game) {
+		  console.log('Found ignored game: ' + req.params.id);
+          res.send({ result: 'ok', game: game});
+        });
+      }
     }
   });
 });
@@ -46,7 +54,9 @@ app.post('/select/:id', function(req, res) {
     appId: req.params.id,
     rating: req.body.rating,
     link: req.body.link,
-    pic: req.body.pic
+    pic: req.body.pic,
+    price: req.body.price,
+	developer: req.body.developer
   };
   gameRepository.saveOrUpdate(game, function(err, game) {
     if(err) {
@@ -55,7 +65,62 @@ app.post('/select/:id', function(req, res) {
     } else {
       res.send({ result: 'ok' });
     }
-  })
+  });
+});
+
+app.post('/remove/:id', function(req, res) {
+  gameRepository.remove(req.params.id, function(err) {
+    if(err) {
+      console.error(err);
+      res.send({ result: 'fail' });
+    } else {
+      console.log('Removed game ' + req.params.id );
+      res.send({ result: 'ok' });
+    }
+  });
+});
+
+app.post('/ignore/:id', function(req, res) {
+  var game = {
+    name: req.body.name,
+    appId: req.params.id,
+    rating: req.body.rating,
+    link: req.body.link,
+    pic: req.body.pic,
+    price: req.body.price
+  };
+  gameRepository.ignore(game, function(err) {
+    if(err) {
+      console.error(err);
+      res.send({ result: 'fail' });
+    } else {
+      console.log('Ignored game ' + req.params.id );
+      res.send({ result: 'ok' });
+    }
+  });
+});
+
+app.post('/removeIgnore/:id', function(req, res) {
+  gameRepository.removeIgnore(req.params.id, function(err) {
+    if(err) {
+      console.error(err);
+      res.send({ result: 'fail' });
+    } else {
+      console.log('Removed game ' + req.params.id );
+      res.send({ result: 'ok' });
+    }
+  });
+});
+
+app.get('/ignored', function(req, res) {
+  gameRepository.findAllIgnored(function(err, games) {
+    if(err) {
+      console.error(err);
+      res.send({ result: 'fail' });
+    } else {
+      res.send({ result: 'ok', games: games});
+    }
+  });
 });
 
 app.listen(3000);
